@@ -7,4 +7,13 @@
     <servlet-name>StudentMemoServlet</servlet-name>
     <url-pattern>/memo</url-pattern>
   </servlet-mapping>
+<servlet>
+  <servlet-name>InsertStudentServlet</servlet-name>
+  <servlet-class>student.InsertStudentServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+  <servlet-name>InsertStudentServlet</servlet-name>
+  <url-pattern>/insert</url-pattern>
+</servlet-mapping>
+
 </web-app>
