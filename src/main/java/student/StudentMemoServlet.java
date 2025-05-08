@@ -1,30 +1,33 @@
 package student;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.*;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import javax.sql.DataSource;
+import java.io.*;
 import java.sql.*;
 
-
 public class StudentMemoServlet extends HttpServlet {
+
+    private DataSource dataSource;
+
+    @Override
+    public void init() {
+        WebApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
+        this.dataSource = (DataSource) context.getBean("dataSource");
+    }
+
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         String studentId = req.getParameter("id");
         res.setContentType("text/html");
         PrintWriter out = res.getWriter();
 
         int total = 0, obtained = 0;
-        boolean fail = false;
-        boolean hasRecords = false;
+        boolean fail = false, hasRecords = false;
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/studentdb", "root", "root");
-
+        try (Connection con = dataSource.getConnection()) {
             PreparedStatement ps = con.prepareStatement("SELECT * FROM marks WHERE student_id = ?");
             ps.setString(1, studentId);
             ResultSet rs = ps.executeQuery();
@@ -35,10 +38,7 @@ public class StudentMemoServlet extends HttpServlet {
             while (rs.next()) {
                 hasRecords = true;
                 String subject = rs.getString("subject");
-                int t = rs.getInt("total_marks");
-                int m = rs.getInt("marks_obtained");
-                int p = rs.getInt("pass_mark");
-
+                int t = rs.getInt("total_marks"), m = rs.getInt("marks_obtained"), p = rs.getInt("pass_mark");
                 String status = (m >= p) ? "Pass" : "Fail";
                 if (m < p) fail = true;
 
@@ -47,7 +47,6 @@ public class StudentMemoServlet extends HttpServlet {
 
                 out.println("<tr><td>" + subject + "</td><td>" + t + "</td><td>" + m + "</td><td>" + p + "</td><td>" + status + "</td></tr>");
             }
-
             out.println("</table>");
 
             if (hasRecords) {
@@ -57,8 +56,6 @@ public class StudentMemoServlet extends HttpServlet {
             } else {
                 out.println("<p style='color:red;'>No records found for Student ID: " + studentId + "</p>");
             }
-
-            con.close();
         } catch (Exception e) {
             out.println("<p>Error: " + e.getMessage() + "</p>");
         }
